@@ -283,7 +283,7 @@ step_packages() {
     local pac_pkgs=(niri xwayland-satellite xdg-desktop-portal-gnome xdg-desktop-portal-gtk
                     fuzzel waybar polkit-gnome mako qt5-wayland qt6-wayland
                     foot fish starship
-                    swaybg swayidle grim slurp
+                    swaybg swayidle grim slurp seatd
                     wl-clipboard cliphist jq python brightnessctl playerctl pamixer
                     # 皮肤字体 + 中文兜底：foot/fuzzel 用 JetBrainsMono Nerd Font，
                     # CJK 字形靠 Noto CJK 做 fontconfig fallback
@@ -528,7 +528,20 @@ patch_niri_session() {
     log "niri.desktop -> Exec=niri --session"
 }
 
+# ly 把会话注册成 greeter 时，niri 通过 logind 拿不到 seat；seatd 是可靠的后备。
+ensure_seatd() {
+    command -v seatd >/dev/null 2>&1 || return 0
+    if [[ "$RICE_DRY_RUN" == "1" ]]; then
+        log "[dry-run] enable seatd + usermod -aG seat $TARGET_USER"
+        return 0
+    fi
+    systemctl enable --now seatd >/dev/null 2>&1 || warn "seatd 启用失败"
+    usermod -aG seat "$TARGET_USER" 2>/dev/null || true
+    log "seatd 已启用，$TARGET_USER 已加入 seat 组（重新登录后生效）"
+}
+
 step_dm() {
+    ensure_seatd
     if [[ "${RICE_NO_DM:-0}" == "1" ]]; then
         log "RICE_NO_DM=1：不启用显示管理器"
         return 0
