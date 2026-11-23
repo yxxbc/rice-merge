@@ -301,7 +301,7 @@ step_packages() {
     fi
 
     echo "${pac_pkgs[*]}" >>"$VERIFY_LIST"
-    exe pacman -S --noconfirm --needed "${pac_pkgs[@]}" || die "pacman 安装失败"
+    exe pacman -S --noconfirm --needed --disable-download-timeout "${pac_pkgs[@]}" || die "pacman 安装失败"
 
     echo "${aur_pkgs[*]}" >>"$VERIFY_LIST"
     exe as_user "$AUR_HELPER" -S --noconfirm --needed "${aur_pkgs[@]}" || die "AUR 安装失败"

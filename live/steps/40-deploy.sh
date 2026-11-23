@@ -41,6 +41,10 @@ step_deploy() {
     if [[ -d "$dest/low-spec-dotfiles/.git" ]]; then
         say "  low-spec: already cloned"
     else
+        if ! command -v git >/dev/null 2>&1; then
+            say "  git missing on live, installing it"
+            run pacman -Sy --noconfirm --needed git || die "git is required to clone Low-Spec"
+        fi
         run git clone --depth=1 "$LOWSPEC_REPO" "$dest/low-spec-dotfiles" \
             || die "Low-Spec clone failed (no LICENSE, so it is never vendored)"
     fi

@@ -25,6 +25,10 @@ step_bootstrap() {
 
     run pacstrap -K "$MNT" "${pkgs[@]}" || die "pacstrap failed (check network/mirrors)"
     run_sh "genfstab -U '$MNT' >> '$MNT/etc/fstab'"
+    if [[ -n "$MIRROR_URL" && "$DRY_RUN" != "1" ]]; then
+        printf 'Server = %s\n' "$MIRROR_URL" >"$MNT/etc/pacman.d/mirrorlist"
+        say "  target mirrorlist: $MIRROR_URL"
+    fi
 
     if command -v lspci >/dev/null 2>&1 && lspci 2>/dev/null | grep -qi 'nvidia'; then
         warn "NVIDIA GPU detected. mesa alone may not be enough: install nvidia-open/nvidia-utils"

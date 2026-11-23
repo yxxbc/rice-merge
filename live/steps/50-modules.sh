@@ -34,6 +34,15 @@ echo "${USERNAME}" > /tmp/shorin_install_user
 export TARGET_USER="${USERNAME}"
 export HOME_DIR="/home/${USERNAME}"
 export RICE_SKIP_DM=1
+EOF
+        if [[ -n "${http_proxy:-}${https_proxy:-}" ]]; then
+            cat <<EOF
+export http_proxy="${http_proxy:-}"
+export https_proxy="${https_proxy:-${http_proxy:-}}"
+export no_proxy="${no_proxy:-}"
+EOF
+        fi
+        cat <<EOF
 export RICE_FILE_MANAGER=${fm_name}
 export RICE_GDS_PORTAL=${fm_portal}
 cd /opt/setup/rice || exit 1
