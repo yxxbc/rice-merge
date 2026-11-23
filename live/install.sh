@@ -79,10 +79,21 @@ fi
 : "${REBOOT:=0}"
 : "${SKIP_NET_CHECK:=0}"
 : "${MNT:=/mnt}"
+: "${FIRMWARE:=}"                    # uefi | bios | empty = auto-detect
+
+if [[ -z "$FIRMWARE" ]]; then
+    if [[ "$DRY_RUN" == "1" ]]; then
+        FIRMWARE=uefi
+    elif [[ -d /sys/firmware/efi ]]; then
+        FIRMWARE=uefi
+    else
+        FIRMWARE=bios
+    fi
+fi
 
 export DISK ESP_SIZE SYS_HOSTNAME USERNAME USER_PASSWORD ROOT_PASSWORD TIMEZONE LOCALE \
        KEYMAP PROFILE FILE_MANAGER SWAP BTRFS_OPTS GRUB_REMOVABLE RICE_REPO RICE_REF \
-       LOWSPEC_REPO LOWSPEC_REF MIRROR_URL ALLOW_WIPE REBOOT SKIP_NET_CHECK MNT
+       LOWSPEC_REPO LOWSPEC_REF MIRROR_URL ALLOW_WIPE REBOOT SKIP_NET_CHECK MNT FIRMWARE
 
 STEPS=(partition bootstrap chroot deploy modules)
 STEP_FILES=(10-partition.sh 20-bootstrap.sh 30-chroot-base.sh 40-deploy.sh 50-modules.sh)
@@ -124,6 +135,9 @@ preconditions() {
         for cmd in pacstrap sgdisk partprobe mkfs.btrfs arch-chroot genfstab curl lsblk; do
             command -v "$cmd" >/dev/null 2>&1 || die "Missing command: $cmd"
         done
+        if [[ "$FIRMWARE" == "uefi" ]]; then
+            command -v mkfs.fat >/dev/null 2>&1 || die "Missing command: mkfs.fat (dosfstools)"
+        fi
 
         if [[ -z "$DISK" ]]; then
             list_disks
@@ -178,6 +192,7 @@ preconditions() {
             || die "Set USER_PASSWORD in the config (placeholder CHANGE_ME is rejected)"
     fi
     say "  profile : $PROFILE"
+    say "  firmware: $FIRMWARE"
     say "  disk    : ${DISK:-<unset>}"
     say "  user    : $USERNAME@$SYS_HOSTNAME"
     say "  mirror  : ${MIRROR_URL:-ISO default}"

@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# 10 - partition and mount (GPT: 1G ESP + btrfs @/@home)
+# 10 - partition and mount
+#   UEFI: 1G ESP + btrfs @/@home
+#   BIOS: 1M bios_grub + btrfs @/@home (no ESP, /boot stays on btrfs)
 
 ESP_PART=""
+BIOS_PART=""
 ROOT_PART=""
 
 partition_names() {
     if [[ "$DISK" =~ [0-9]$ ]]; then
         ESP_PART="${DISK}p1"
+        BIOS_PART="${DISK}p1"
         ROOT_PART="${DISK}p2"
     else
         ESP_PART="${DISK}1"
+        BIOS_PART="${DISK}1"
         ROOT_PART="${DISK}2"
     fi
 }
@@ -38,13 +43,18 @@ confirm_wipe() {
 
 step_partition() {
     partition_names
-    step "10 partition: $DISK -> $ESP_PART + $ROOT_PART"
+    step "10 partition: $DISK -> $FIRMWARE ($ROOT_PART)"
 
     if [[ "$DRY_RUN" == "1" ]]; then
         run sgdisk --zap-all "$DISK"
-        run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK"
-        run sgdisk -n 2:0:0 -t 2:8300 -c 2:ARCH "$DISK"
-        run mkfs.fat -F 32 -n ESP "$ESP_PART"
+        if [[ "$FIRMWARE" == "uefi" ]]; then
+            run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK"
+            run sgdisk -n 2:0:0 -t 2:8300 -c 2:ARCH "$DISK"
+            run mkfs.fat -F 32 -n ESP "$ESP_PART"
+        else
+            run sgdisk -n 1:0:+1M -t 1:ef02 -c 1:BIOSBOOT "$DISK"
+            run sgdisk -n 2:0:0 -t 2:8300 -c 2:ARCH "$DISK"
+        fi
         run mkfs.btrfs -f -L arch "$ROOT_PART"
         run mount "$ROOT_PART" "$MNT"
         run btrfs subvolume create "$MNT/@" "$MNT/@home"
@@ -59,12 +69,18 @@ step_partition() {
     swapoff -a 2>/dev/null || true
 
     run sgdisk --zap-all "$DISK" || die "Failed to zap the partition table"
-    run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK" || die "Failed to create ESP"
+    if [[ "$FIRMWARE" == "uefi" ]]; then
+        run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK" || die "Failed to create ESP"
+    else
+        run sgdisk -n 1:0:+1M -t 1:ef02 -c 1:BIOSBOOT "$DISK" || die "Failed to create bios_grub"
+    fi
     run sgdisk -n 2:0:0 -t 2:8300 -c 2:ARCH "$DISK" || die "Failed to create root partition"
     run partprobe "$DISK"
     run udevadm settle
 
-    run mkfs.fat -F 32 -n ESP "$ESP_PART" || die "Failed to format ESP"
+    if [[ "$FIRMWARE" == "uefi" ]]; then
+        run mkfs.fat -F 32 -n ESP "$ESP_PART" || die "Failed to format ESP"
+    fi
     run mkfs.btrfs -f -L arch "$ROOT_PART" || die "Failed to format btrfs"
 
     run mount "$ROOT_PART" "$MNT" || die "Failed to mount root"
@@ -73,5 +89,7 @@ step_partition() {
     run mount -o "$BTRFS_OPTS,subvol=@" "$ROOT_PART" "$MNT" || die "Failed to mount @"
     run mkdir -p "$MNT/home" "$MNT/boot"
     run mount -o "$BTRFS_OPTS,subvol=@home" "$ROOT_PART" "$MNT/home" || die "Failed to mount @home"
-    run mount "$ESP_PART" "$MNT/boot" || die "Failed to mount ESP"
+    if [[ "$FIRMWARE" == "uefi" ]]; then
+        run mount "$ESP_PART" "$MNT/boot" || die "Failed to mount ESP"
+    fi
 }

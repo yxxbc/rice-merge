@@ -67,7 +67,8 @@ sudo bash install.sh --unattended --desktop minimalniri
 
 ### B. 从 Arch live ISO 全自动装
 
-**真机前置条件**：UEFI 启动、有线网络（Wi-Fi 先在 live 里跑 `iwctl`）、**目标盘会被整盘清空**。
+**真机前置条件**：UEFI 或 BIOS 均可（安装器自动检测；BIOS 用 1MB `bios_grub` + GPT、GRUB `i386-pc`）、
+有线网络（Wi-Fi 先在 live 里跑 `iwctl`）、**目标盘会被整盘清空**。
 安装器只接受整盘设备（`/dev/nvme0n1`、`/dev/sda`），并且会拒绝“live U 盘自己”。
 
 ```bash

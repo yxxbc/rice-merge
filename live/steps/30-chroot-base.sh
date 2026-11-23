@@ -62,10 +62,20 @@ ZRAM
 systemctl daemon-reload || true
 EOF
             fi
-            if [[ "$GRUB_REMOVABLE" == "1" ]]; then
-                echo 'grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck'
+            if [[ -n "${http_proxy:-}${https_proxy:-}" ]]; then
+                cat <<'EOF'
+echo 'Defaults env_keep += "http_proxy https_proxy no_proxy"' > /etc/sudoers.d/99-proxy
+chmod 440 /etc/sudoers.d/99-proxy
+EOF
+            fi
+            if [[ "$FIRMWARE" == "uefi" ]]; then
+                if [[ "$GRUB_REMOVABLE" == "1" ]]; then
+                    echo 'grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck'
+                else
+                    echo 'grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck'
+                fi
             else
-                echo 'grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck'
+                echo "grub-install --target=i386-pc --recheck $DISK"
             fi
             cat <<'EOF'
 grub-mkconfig -o /boot/grub/grub.cfg
