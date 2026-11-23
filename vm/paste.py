@@ -84,16 +84,34 @@ class QMP:
                 raise RuntimeError(reply["error"].get("desc", "QMP error"))
             return reply
 
+    def _event(self, key: str, down: bool) -> dict:
+        return {"type": "key", "data": {"down": down, "key": {"type": "qcode", "data": key}}}
+
     def keys(self, keys: list[str], hold_ms: int = 40) -> None:
-        self._cmd(
-            {
-                "execute": "send-key",
-                "arguments": {
-                    "keys": [{"type": "qcode", "data": k} for k in keys],
-                    "hold-time": hold_ms,
-                },
-            }
-        )
+        # Send down/up as separate events with a small delay. Sending a whole
+        # chord in one command can lose the modifier release on slow (TCG) guests,
+        # which leaves shift stuck and turns "/" into "?".
+        try:
+            for key in keys:
+                self._cmd({"execute": "input-send-event", "arguments": {"events": [self._event(key, True)]}})
+                time.sleep(0.02)
+            for key in reversed(keys):
+                self._cmd({"execute": "input-send-event", "arguments": {"events": [self._event(key, False)]}})
+                time.sleep(0.02)
+        except RuntimeError:
+            # Older QEMU / no input device: fall back to send-key.
+            self._cmd(
+                {
+                    "execute": "send-key",
+                    "arguments": {
+                        "keys": [{"type": "qcode", "data": k} for k in keys],
+                        "hold-time": hold_ms,
+                    },
+                }
+            )
+
+    def release(self, key: str) -> None:
+        self._cmd({"execute": "input-send-event", "arguments": {"events": [self._event(key, False)]}})
 
 
 def char_keys(ch: str) -> list[str] | None:
