@@ -205,7 +205,46 @@ sudo shorin-undochange
 | 没有壁纸/不取色 | `matugen` 是否安装；`rice-wallpaper random` 手动跑 |
 | AUR 构建失败 | 看 `/tmp/rice-live.log` 与 `~/Documents/log-shorin-arch-setup.txt` |
 
-### VM 图形限制
+### VM 图形限制（已定位）
+
+niri 官方 wiki 明确写了：**在 VM 里跑 niri 必须开启 3D 加速**。
+本机 Homebrew QEMU **没有编译 OpenGL 支持**（`OpenGL support was not enabled in this build`），
+virtio-gpu 只能提供 2D；niri 的 TTY 后端会拒绝软件 EGL：
+
+```
+failed to initialize renderer ... software EGL renderers are skipped
+error adding primary node device ... no allocator available for device
+```
+
+所以这个 QEMU 里 niri 拿不到 output，不是安装问题。
+
+无 3D 时的预览方案（已在本 VM 验证）：用 **headless sway（pixman 软件渲染）**托一个
+**nested niri**，再用 grim 截图或 wayvnc 看。
+
+```bash
+# guest 内（SSH 或 TTY），用户 arch
+systemd-run --user --unit=sway-headless \
+  --setenv=XDG_RUNTIME_DIR=/run/user/1000 \
+  --setenv=WLR_BACKENDS=headless --setenv=WLR_RENDERER=pixman \
+  --setenv=WLR_LIBINPUT_NO_DEVICES=1 \
+  /usr/bin/sway -c /dev/null
+
+systemd-run --user --unit=niri-nested \
+  --setenv=XDG_RUNTIME_DIR=/run/user/1000 --setenv=WAYLAND_DISPLAY=wayland-2 \
+  /usr/bin/niri
+
+# 截图（HEADLESS-1 是 sway 的虚拟输出）
+XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-2 \
+  grim -o HEADLESS-1 ~/desktop.png
+```
+
+实测截图：`vm/nested2.png`（niri 窗口内 waybar 正常：时钟/workspace/网络/蓝牙/电源）。
+
+真正要 niri 直接上屏，选一个：
+- 真机 Arch；
+- Linux 主机 KVM + virtio-gpu-gl / virgl；
+- macOS 上用支持 3D 加速的虚拟化（UTM/Parallels 的 arm64 来宾 + 对应 Arch ARM）。
+
 
 - 本机是 Apple Silicon，x86_64 走 TCG；niri 在 `virtio-gpu`/TCG 下可能一直停在
   `niri_config: loaded config`，而 `seatd` 已打开 seat。这更像 QEMU/TCG 的图形后端问题，
