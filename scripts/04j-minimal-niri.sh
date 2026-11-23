@@ -85,13 +85,13 @@ fi
 section "Minimal Niri" "Core Components"
 NIRI_PKGS=(niri xwayland-satellite xdg-desktop-portal-gnome fuzzel waybar polkit-gnome mako qt5-wayland qt6-wayland)
 echo "${NIRI_PKGS[*]}" >> "$VERIFY_LIST"
-exe as_user "$AUR_HELPER" -S --noconfirm --needed --answerclean=None --answerdiff=None "${NIRI_PKGS[@]}"
+exe as_user "$AUR_HELPER" -S --noconfirm --needed "${NIRI_PKGS[@]}"
 
 # --- 5. Terminal ---
 section "Minimal Niri" "Terminal"
 TERMINAL_PKGS=(fish foot ttf-jetbrains-maple-mono-nf-xx-xx starship eza zoxide imagemagick jq bat)
 echo "${TERMINAL_PKGS[*]}" >> "$VERIFY_LIST"
-exe as_user "$AUR_HELPER" -S --noconfirm --needed --answerclean=None --answerdiff=None "${TERMINAL_PKGS[@]}"
+exe as_user "$AUR_HELPER" -S --noconfirm --needed "${TERMINAL_PKGS[@]}"
 
 # --- 6. File Manager ---
 section "Minimal Niri" "File Manager"
@@ -104,7 +104,7 @@ exe pacman -S --noconfirm --needed "${FM_PKGS1[@]}"
 exe pacman -S --noconfirm --needed "${FM_PKGS2[@]}"
 
 echo "xdg-terminal-exec" >> "$VERIFY_LIST"
-exe as_user "$AUR_HELPER" -S --noconfirm --needed --answerclean=None --answerdiff=None xdg-terminal-exec
+exe as_user "$AUR_HELPER" -S --noconfirm --needed xdg-terminal-exec
 
 # 修复：如果不包含 foot，则追加
 XDG_TERMS_LIST="$HOME_DIR/.config/xdg-terminals.list"
@@ -123,7 +123,7 @@ configure_nautilus_user
 section "Minimal Niri" "Tools"
 TOOLS_PKGS=(imv cliphist opencode wl-clipboard cliphist-tui-git shorin-contrib-git hyprlock breeze-cursors nwg-look adw-gtk-theme pavucontrol pulsemixer satty rime-wanxiang-gram-zh-hans shorin-proton-wrapper-git)
 echo "${TOOLS_PKGS[*]}" >> "$VERIFY_LIST"
-exe as_user "$AUR_HELPER" -S --noconfirm --needed --answerclean=None --answerdiff=None "${TOOLS_PKGS[@]}"
+exe as_user "$AUR_HELPER" -S --noconfirm --needed "${TOOLS_PKGS[@]}"
 
 as_user shorin link
 

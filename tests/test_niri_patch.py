@@ -121,6 +121,27 @@ class BindsTests(unittest.TestCase):
         self.assertEqual(out.count("rice-paper"), 1)
         self.assertEqual(out.count("{"), out.count("}"))
 
+    def test_skips_duplicate_keybind(self):
+        tmp = Temp()
+        binds = tmp.file("binds.kdl", BINDS_SAMPLE)
+        frag = tmp.file(
+            "frag.kdl",
+            '    Mod+Q { close-window; }\n    Mod+Y { spawn "rice-paper"; }\n',
+        )
+        self.assertEqual(niri_patch.main(["binds", binds, frag]), 0)
+        text = tmp.read(binds)
+        self.assertEqual(text.count("Mod+Q"), 1)
+        self.assertEqual(text.count("Mod+Y"), 1)
+        self.assertEqual(text.count("{"), text.count("}"))
+
+    def test_all_duplicates_is_noop(self):
+        tmp = Temp()
+        binds = tmp.file("binds.kdl", BINDS_SAMPLE)
+        frag = tmp.file("frag.kdl", '    Mod+Q { close-window; }\n')
+        before = tmp.read(binds)
+        self.assertEqual(niri_patch.main(["binds", binds, frag]), 0)
+        self.assertEqual(tmp.read(binds), before)
+
     def test_fails_without_closing_brace(self):
         tmp = Temp()
         binds = tmp.file("binds.kdl", 'binds {\n    Mod+T { spawn "foot"; }\n')

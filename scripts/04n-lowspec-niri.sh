@@ -283,12 +283,12 @@ step_packages() {
     local pac_pkgs=(niri xwayland-satellite xdg-desktop-portal-gnome xdg-desktop-portal-gtk
                     fuzzel waybar polkit-gnome mako qt5-wayland qt6-wayland
                     foot fish starship
-                    swaybg swayidle wlogout grim slurp
+                    swaybg swayidle grim slurp
                     wl-clipboard cliphist jq python brightnessctl playerctl pamixer
                     # 皮肤字体 + 中文兜底：foot/fuzzel 用 JetBrainsMono Nerd Font，
                     # CJK 字形靠 Noto CJK 做 fontconfig fallback
                     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji)
-    local aur_pkgs=(matugen rime-wanxiang-gram-zh-hans shorin-contrib-git)
+    local aur_pkgs=(matugen wlogout rime-wanxiang-gram-zh-hans shorin-contrib-git)
 
     # 04j 会装 Thunar/Nautilus 作回退；这里只在默认文件管理器是 Thunar 时补齐 04n 的依赖。
     # 单跑 04n（没有 04j）时，选 gds 就不会再装 Thunar。
@@ -304,7 +304,7 @@ step_packages() {
     exe pacman -S --noconfirm --needed "${pac_pkgs[@]}" || die "pacman 安装失败"
 
     echo "${aur_pkgs[*]}" >>"$VERIFY_LIST"
-    exe as_user "$AUR_HELPER" -S --noconfirm --needed --answerclean=None --answerdiff=None "${aur_pkgs[@]}" || die "AUR 安装失败"
+    exe as_user "$AUR_HELPER" -S --noconfirm --needed "${aur_pkgs[@]}" || die "AUR 安装失败"
 
     if [[ "$RICE_FILE_MANAGER" == "gds" ]]; then
         gds_install_pkg gds-files "$GDS_FILES_PKG_URL" "$GDS_FILES_SHA256" \
@@ -600,7 +600,11 @@ step_verify() {
             niri validate -c "$NIRI/config.kdl" >/dev/null 2>&1; then
             success "niri validate 通过"
         else
-            warn "niri validate 未通过（可能需要在 niri 会话内执行）；请人工确认"
+            if [[ "${RICE_LENIENT:-0}" == "1" ]]; then
+                warn "niri validate 未通过（RICE_LENIENT=1，继续）；niri 可能无法启动"
+            else
+                die "niri validate 未通过：配置里有语法错误或重复键位（多由 binds.kdl 冲突引起）"
+            fi
         fi
     fi
     success "合并结果校验通过"

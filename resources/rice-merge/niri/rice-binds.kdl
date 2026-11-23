@@ -8,5 +8,4 @@
     Mod+V hotkey-overlay-title="剪贴板 Clipboard" { spawn "rice-clipboard"; }
     Mod+M hotkey-overlay-title="任务管理器 Task manager" { spawn "rice-taskmgr"; }
     Super+X hotkey-overlay-title="电源菜单 Power menu" { spawn "rice-power"; }
-    Mod+Alt+L hotkey-overlay-title="锁屏 Lock screen" { spawn "hyprlock"; }
     Mod+Shift+W hotkey-overlay-title="浮动窗口并居中 Float & center" { spawn "rice-float-center"; }

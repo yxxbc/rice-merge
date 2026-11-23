@@ -58,18 +58,63 @@ def _marker_span(lines):
     return None
 
 
+KEYBIND_RE = re.compile(r"^\s*([^\s{]+)\s+.*\{")
+
+
+def _keybind(line):
+    """键位行的第一个 token（Mod+T / Print / Super+X）；注释和普通语句返回 None。"""
+    if line.lstrip().startswith("//"):
+        return None
+    match = KEYBIND_RE.match(line)
+    return match.group(1) if match else None
+
+
 def cmd_binds(args):
-    """把 rice 键位块放在 binds.kdl 最后一个独占一行的 } 之前。"""
+    """把 rice 键位块放在 binds.kdl 最后一个独占一行的 } 之前。
+
+    与已有键位冲突的片段行会被跳过：niri 对重复键位是硬错误，整份配置会直接失效。
+    """
     text = _read(args.file)
     fragment = _read(args.fragment).rstrip("\n")
     if not fragment.strip():
         print("binds: fragment is empty", file=sys.stderr)
         return 1
 
-    block = [BEGIN] + fragment.splitlines() + [END]
     lines = text.splitlines()
-
     span = _marker_span(lines)
+    legacy_at = next((i for i, line in enumerate(lines) if line.strip() == LEGACY), None)
+    brace = _last_standalone_brace(lines)
+
+    existing = set()
+    for i, line in enumerate(lines):
+        if span is not None and span[0] <= i <= span[1]:
+            continue
+        # 旧版块会被整段删除，里面的键位不算“已存在”
+        if span is None and legacy_at is not None and brace is not None and legacy_at <= i < brace:
+            continue
+        key = _keybind(line)
+        if key:
+            existing.add(key)
+
+    frag_lines = []
+    skipped = []
+    for line in fragment.splitlines():
+        key = _keybind(line)
+        if key and key in existing:
+            skipped.append(key)
+            continue
+        frag_lines.append(line)
+
+    if skipped:
+        print("binds: skipped duplicate keybind(s): %s" % ", ".join(skipped))
+    if not any(_keybind(line) for line in frag_lines):
+        if span is None:
+            print("binds: nothing new to insert (all keybinds already exist)")
+        else:
+            print("binds: already applied")
+        return 0
+
+    block = [BEGIN] + frag_lines + [END]
     if span is not None:
         begin, end = span
         if lines[begin : end + 1] == block:
