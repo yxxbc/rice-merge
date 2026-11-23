@@ -1,11 +1,12 @@
-    // 以下键位由 04n-lowspec-niri.sh 插入；与 shorin 已有键位冲突时以 shorin 为准
+    // 以下键位由 04n-lowspec-niri.sh 插入；与 shorin 冲突的键位已重映射：
+    //   Mod+Comma/Mod+N/Mod+V/Mod+Alt+L 归 shorin，rice 改用 Shift/Ctrl 组合
     Mod+Y hotkey-overlay-title="壁纸选择 Wallpaper picker" { spawn "rice-paper"; }
     Mod+Ctrl+T hotkey-overlay-title="下一张壁纸 Next wallpaper" { spawn "rice-wallpaper" "next"; }
     Mod+Ctrl+Shift+T hotkey-overlay-title="壁纸选择 Wallpaper picker (alt)" { spawn "rice-paper"; }
     Mod+Ctrl+Y hotkey-overlay-title="切换状态栏布局 Waybar layout" { spawn "sh" "-c" "$HOME/.config/waybar/scripts/theme-selector.sh"; }
-    Mod+Comma hotkey-overlay-title="控制中心 Control center" { spawn "rice-menu"; }
-    Mod+N hotkey-overlay-title="通知中心 Notifications" { spawn "rice-notif"; }
-    Mod+V hotkey-overlay-title="剪贴板 Clipboard" { spawn "rice-clipboard"; }
+    Mod+Shift+C hotkey-overlay-title="控制中心 Control center" { spawn "rice-menu"; }
+    Mod+Shift+N hotkey-overlay-title="通知中心 Notifications" { spawn "rice-notif"; }
+    Mod+Ctrl+V hotkey-overlay-title="剪贴板 Clipboard" { spawn "rice-clipboard"; }
     Mod+M hotkey-overlay-title="任务管理器 Task manager" { spawn "rice-taskmgr"; }
     Super+X hotkey-overlay-title="电源菜单 Power menu" { spawn "rice-power"; }
     Mod+Shift+W hotkey-overlay-title="浮动窗口并居中 Float & center" { spawn "rice-float-center"; }

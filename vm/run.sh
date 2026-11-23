@@ -46,6 +46,8 @@ QMP="$VM_DIR/qmp.sock"
 BOOT_ORDER="${VM_BOOT_ORDER:-cd}"
 CDROM_ARGS=(-cdrom "$ISO")
 [[ "${VM_NO_ISO:-0}" == "1" ]] && CDROM_ARGS=()
+VNC_ARGS=()
+[[ -n "${VM_VNC:-}" ]] && VNC_ARGS=(-vnc "$VM_VNC")
 
 if [[ ! -f "$DISK" ]]; then
     echo "创建磁盘 $DISK (40G)"
@@ -102,7 +104,8 @@ exec "$QEMU" \
     -nic "user,model=virtio-net-pci,hostfwd=tcp::$PORT-:22" \
     -qmp "unix:$QMP,server=on,wait=off" \
     -vga none \
-    -device VGA,vgamem_mb=64,xres=1024,yres=768 \
+    -device virtio-vga \
     -device qemu-xhci -device usb-kbd -device usb-tablet \
+    ${VNC_ARGS[@]+"${VNC_ARGS[@]}"} \
     -serial "file:$VM_DIR/serial.log" \
     -display "$VM_DISPLAY"

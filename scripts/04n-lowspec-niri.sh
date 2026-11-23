@@ -373,6 +373,7 @@ step_merge() {
 
     rice_put "$OVERLAY_DIR/environment.d/91-low-spec-fcitx.conf" \
         "$HOME_DIR/.config/environment.d/91-low-spec-fcitx.conf"
+    patch_niri_session
     chown_user "$NIRI"
     chown_user "$WB"
 }
@@ -512,6 +513,21 @@ step_render() {
 }
 
 # 6/8 显示管理器（shorin 默认 ly；04j 通常已装，这里做幂等补齐）
+# niri-session 在装了 dinitctl 但没有 dinit 的系统上会走错分支，直接改用 niri --session
+patch_niri_session() {
+    local f=/usr/share/wayland-sessions/niri.desktop
+    [[ -f "$f" ]] || return 0
+    grep -q '^Exec=niri --session' "$f" && return 0
+    if [[ "$RICE_DRY_RUN" == "1" ]]; then
+        log "[dry-run] patch $f -> Exec=niri --session"
+        return 0
+    fi
+    rice_backup_once "$f"
+    sed -i 's|^Exec=.*|Exec=niri --session|' "$f"
+    record_once file "$f" "$f.rice.bak"
+    log "niri.desktop -> Exec=niri --session"
+}
+
 step_dm() {
     if [[ "${RICE_NO_DM:-0}" == "1" ]]; then
         log "RICE_NO_DM=1：不启用显示管理器"
