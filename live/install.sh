@@ -82,10 +82,10 @@ fi
 : "${FIRMWARE:=}"                    # uefi | bios | empty = auto-detect
 
 if [[ -z "$FIRMWARE" ]]; then
-    if [[ "$DRY_RUN" == "1" ]]; then
+    if [[ -d /sys/firmware/efi ]]; then
         FIRMWARE=uefi
-    elif [[ -d /sys/firmware/efi ]]; then
-        FIRMWARE=uefi
+    elif [[ "$DRY_RUN" == "1" && "$(uname -s)" != "Linux" ]]; then
+        FIRMWARE=uefi   # dry-run on the mac
     else
         FIRMWARE=bios
     fi

@@ -46,6 +46,7 @@ step_partition() {
     step "10 partition: $DISK -> $FIRMWARE ($ROOT_PART)"
 
     if [[ "$DRY_RUN" == "1" ]]; then
+        run wipefs -a "$DISK"
         run sgdisk --zap-all "$DISK"
         if [[ "$FIRMWARE" == "uefi" ]]; then
             run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK"
@@ -68,6 +69,7 @@ step_partition() {
     umount -R "$MNT" 2>/dev/null || true
     swapoff -a 2>/dev/null || true
 
+    run wipefs -a "$DISK" || true
     run sgdisk --zap-all "$DISK" || die "Failed to zap the partition table"
     if [[ "$FIRMWARE" == "uefi" ]]; then
         run sgdisk -n "1:0:+$ESP_SIZE" -t 1:ef00 -c 1:ESP "$DISK" || die "Failed to create ESP"
@@ -77,6 +79,9 @@ step_partition() {
     run sgdisk -n 2:0:0 -t 2:8300 -c 2:ARCH "$DISK" || die "Failed to create root partition"
     run partprobe "$DISK"
     run udevadm settle
+    if [[ "$FIRMWARE" == "bios" ]]; then
+        run wipefs -a "$BIOS_PART" || true
+    fi
 
     if [[ "$FIRMWARE" == "uefi" ]]; then
         run mkfs.fat -F 32 -n ESP "$ESP_PART" || die "Failed to format ESP"
