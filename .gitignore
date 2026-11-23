@@ -1,0 +1,8 @@
+# 上游仓库不 vendor（Low-Spec 无 LICENSE，不适合再分发）
+upstream/
+low-spec-dotfiles/
+work/
+*.bak
+__pycache__/
+*.pyc
+.DS_Store
