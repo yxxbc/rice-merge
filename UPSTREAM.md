@@ -34,6 +34,9 @@
 ### `scripts/00-utils.sh`
 - 删除文件末尾的顶层 `check_root` 调用。原实现导致“source 即要求 root”，
   使 `04n check|plan` 和端到端测试无法以普通用户运行。各入口脚本仍自行检查 root。
+- `detect_target_user` 优先采用调用方显式设置的 `TARGET_USER`（且家目录存在）。
+  `02a-user.sh` 会先删掉 `/tmp/shorin_install_user` 缓存再重新探测，无人值守安装
+  因此会卡在选用户提示；设置 `TARGET_USER` 后直接返回。
 
 ### `install.sh`
 - 新增 `--unattended`、`--desktop`、`--modules`、`--skip-reflector`、`--no-reboot`、

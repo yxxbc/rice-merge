@@ -49,6 +49,13 @@ check_root() {
 # detect_target_user - 识别目标用户 (支持 1-based 序号、回车默认、及新建用户)
 # ==============================================================================
 detect_target_user() {
+    # 无人值守：调用方显式指定 TARGET_USER 时直接采用（live/VM 安装用）
+    if [[ -n "${TARGET_USER:-}" && -d "/home/${TARGET_USER}" ]]; then
+        HOME_DIR="/home/$TARGET_USER"
+        export TARGET_USER HOME_DIR
+        return 0
+    fi
+
     # 1. 缓存检查
     if [[ -f "/tmp/shorin_install_user" ]]; then
         TARGET_USER=$(cat "/tmp/shorin_install_user")

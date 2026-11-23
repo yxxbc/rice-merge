@@ -30,6 +30,9 @@ set -uo pipefail
 export SHELL=/bin/bash
 export LANG=en_US.UTF-8
 echo "${USERNAME}" > /tmp/shorin_install_user
+# 02a-user.sh 会删掉缓存再重新探测；显式给 TARGET_USER 让它不再提示
+export TARGET_USER="${USERNAME}"
+export HOME_DIR="/home/${USERNAME}"
 export RICE_SKIP_DM=1
 export RICE_FILE_MANAGER=${fm_name}
 export RICE_GDS_PORTAL=${fm_portal}
