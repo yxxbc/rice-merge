@@ -121,8 +121,7 @@ preconditions() {
     if [[ "$DRY_RUN" != "1" ]]; then
         [[ "$(id -u)" -eq 0 ]] || die "Must run as root"
         [[ -d /run/archiso ]] || die "Not an Arch live environment (/run/archiso missing)"
-        [[ -d /sys/firmware/efi ]] || die "UEFI only (no /sys/firmware/efi)"
-        for cmd in pacstrap sgdisk partprobe mkfs.btrfs mkfs.fat arch-chroot genfstab curl lsblk; do
+        for cmd in pacstrap sgdisk partprobe mkfs.btrfs arch-chroot genfstab curl lsblk; do
             command -v "$cmd" >/dev/null 2>&1 || die "Missing command: $cmd"
         done
 
