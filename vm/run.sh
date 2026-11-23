@@ -43,6 +43,9 @@ PORT="${VM_SSH_PORT:-2222}"
 VM_DISPLAY="${VM_DISPLAY:-cocoa,zoom-to-fit=on}"
 VARS="$VM_DIR/edk2-vars.fd"
 QMP="$VM_DIR/qmp.sock"
+BOOT_ORDER="${VM_BOOT_ORDER:-cd}"
+CDROM_ARGS=(-cdrom "$ISO")
+[[ "${VM_NO_ISO:-0}" == "1" ]] && CDROM_ARGS=()
 
 if [[ ! -f "$DISK" ]]; then
     echo "创建磁盘 $DISK (40G)"
@@ -92,8 +95,8 @@ exec "$QEMU" \
     -drive if=pflash,format=raw,readonly=on,file="$FW_DIR/edk2-x86_64-code.fd" \
     -drive if=pflash,format=raw,file="$VARS" \
     -drive file="$DISK",if=virtio,format=qcow2 \
-    -cdrom "$ISO" \
-    -boot order=cd \
+    ${CDROM_ARGS[@]+"${CDROM_ARGS[@]}"} \
+    -boot "order=$BOOT_ORDER" \
     -device virtio-rng-pci \
     -virtfs "local,path=$REPO_ROOT,mount_tag=repo,security_model=none,readonly=on" \
     -nic "user,model=virtio-net-pci,hostfwd=tcp::$PORT-:22" \

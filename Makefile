@@ -6,7 +6,7 @@ OUR_SH = install.sh scripts/04n-lowspec-niri.sh scripts/lib/common.sh \
          live/install.sh live/lib/common.sh \
          live/steps/10-partition.sh live/steps/20-bootstrap.sh \
          live/steps/30-chroot-base.sh live/steps/40-deploy.sh live/steps/50-modules.sh \
-         tests/e2e/merge.sh vm/run.sh vm/live-autoinstall.sh vm/paste.sh live/enable-ssh.sh live/remote-install.sh
+         tests/e2e/merge.sh vm/run.sh vm/live-autoinstall.sh vm/paste.sh vm/resume.sh live/enable-ssh.sh live/remote-install.sh
 
 .PHONY: help test lint e2e check live-dry-run vm clean
 

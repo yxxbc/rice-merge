@@ -1,0 +1,7 @@
+提示：Apple Silicon 上以 TCG 模拟 x86_64，安装会明显变慢（建议 PROFILE=smoke）
+ISO   : /Users/mac/Downloads/archlinux-x86_64.iso
+Disk  : /Users/mac/Projects/rice-merge/vm/arch-test.qcow2
+内存  : 4096MB  CPU: 4  加速: q35 -accel tcg,thread=multi
+共享  : /Users/mac/Projects/rice-merge -> 9p mount_tag=repo
+SSH   : localhost:2222 -> 22（装好之后）
+QMP   : /Users/mac/Projects/rice-merge/vm/qmp.sock（调试/截图用）
