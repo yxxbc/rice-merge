@@ -1,35 +1,45 @@
-SHORIN ?=
+SH ?= $(shell command -v bash)
 PYTHON ?= python3
+SHELLCHECK ?= shellcheck
 
-.PHONY: help test lint deploy check clean
+OUR_SH = install.sh scripts/04n-lowspec-niri.sh scripts/lib/common.sh \
+         live/install.sh live/lib/common.sh \
+         live/steps/10-partition.sh live/steps/20-bootstrap.sh \
+         live/steps/30-chroot-base.sh live/steps/40-deploy.sh live/steps/50-modules.sh \
+         tests/e2e/merge.sh vm/run.sh vm/live-autoinstall.sh vm/paste.sh live/enable-ssh.sh live/remote-install.sh
+
+.PHONY: help test lint e2e check live-dry-run vm clean
 
 help:
-	@echo "make test                 跑 tools/niri_patch.py 的单元测试"
-	@echo "make lint                 bash -n + python 语法检查"
-	@echo "make deploy SHORIN=路径   把安装脚本/overlay/工具部署进 shorin-arch-setup"
-	@echo "make check                一次跑完 lint + test"
+	@echo "make test          单元测试（tools/niri_patch.py）"
+	@echo "make lint          bash -n + py_compile + shellcheck(-S error)"
+	@echo "make e2e           在假 HOME 上跑真实 04n：合并/幂等/undo/契约检查"
+	@echo "make check         lint + test + e2e（CI 用）"
+	@echo "make live-dry-run  打印 live 安装器将执行的命令"
+	@echo "make vm            启动 QEMU 验证环境（需要 Arch ISO）"
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
 
 lint:
-	bash -n install/04n-lowspec-niri.sh
-	$(PYTHON) -m py_compile tools/niri_patch.py
-	@if command -v shellcheck >/dev/null; then shellcheck -S error install/04n-lowspec-niri.sh; \
-	 else echo "shellcheck 未安装，跳过"; fi
+	@for f in $(OUR_SH); do bash -n "$$f" || exit 1; done
+	$(PYTHON) -m py_compile tools/niri_patch.py vm/paste.py
+	@if command -v $(SHELLCHECK) >/dev/null 2>&1; then \
+		$(SHELLCHECK) -S error $(OUR_SH); \
+	else echo "shellcheck 未安装，跳过"; fi
 	@echo "lint: ok"
 
-check: lint test
+e2e:
+	bash tests/e2e/merge.sh
 
-deploy:
-	@test -n "$(SHORIN)" || { echo "usage: make deploy SHORIN=/path/to/shorin-arch-setup"; exit 2; }
-	@test -d "$(SHORIN)/scripts" || { echo "$(SHORIN)/scripts 不存在"; exit 2; }
-	install -Dm755 install/04n-lowspec-niri.sh     "$(SHORIN)/scripts/04n-lowspec-niri.sh"
-	install -Dm755 tools/niri_patch.py             "$(SHORIN)/resources/niri-merge-tools/niri_patch.py"
-	rsync -a --delete overlay/                     "$(SHORIN)/resources/niri-merge-overlay/"
-	@test -d "$(SHORIN)/low-spec-dotfiles" || \
-		echo "提醒：$(SHORIN)/low-spec-dotfiles 还没克隆，执行 git clone --depth=1 https://github.com/okyashgajjar/Low-Spec-Niri-Dotfiles.git $(SHORIN)/low-spec-dotfiles"
-	@echo "deploy: ok -> $(SHORIN)/scripts/04n-lowspec-niri.sh"
+check: lint test e2e
+
+live-dry-run:
+	DISK=/dev/vda bash live/install.sh --dry-run --yes --config live/install.env.example
+
+vm:
+	bash vm/run.sh
 
 clean:
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
+	rm -rf vm/arch-test.qcow2 vm/edk2-vars.fd vm/serial.log

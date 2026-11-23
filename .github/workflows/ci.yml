@@ -14,5 +14,7 @@ jobs:
           python-version: "3.x"
       - name: 依赖
         run: sudo apt-get update && sudo apt-get install -y shellcheck rsync
-      - name: lint + test
+      - name: lint + test + e2e
         run: make check
+      - name: live 安装器 dry-run
+        run: make live-dry-run

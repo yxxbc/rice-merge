@@ -73,10 +73,13 @@ class BindsTests(unittest.TestCase):
         frag = tmp.file("frag.kdl", FRAGMENT_SAMPLE)
         self.assertEqual(niri_patch.main(["binds", binds, frag]), 0)
         text = tmp.read(binds)
-        self.assertEqual(text.count(niri_patch.MARKER), 1)
+        self.assertEqual(text.count(niri_patch.BEGIN), 1)
+        self.assertEqual(text.count(niri_patch.END), 1)
         self.assertEqual(text.count("{"), text.count("}"))
         self.assertIn('Mod+Y { spawn "rice-paper"; }', text)
         self.assertTrue(text.rstrip().endswith("}"))
+        # 块必须在最后一个 } 之前
+        self.assertLess(text.index(niri_patch.BEGIN), text.rindex("}"))
 
     def test_is_idempotent(self):
         tmp = Temp()
@@ -87,11 +90,43 @@ class BindsTests(unittest.TestCase):
         niri_patch.main(["binds", binds, frag])
         self.assertEqual(tmp.read(binds), first)
 
+    def test_updates_fragment_in_place(self):
+        tmp = Temp()
+        binds = tmp.file("binds.kdl", BINDS_SAMPLE)
+        frag = tmp.file("frag.kdl", FRAGMENT_SAMPLE)
+        niri_patch.main(["binds", binds, frag])
+        frag2 = tmp.file("frag2.kdl", '    Mod+Y { spawn "rice-paper"; }\n')
+        self.assertEqual(niri_patch.main(["binds", binds, frag2]), 0)
+        text = tmp.read(binds)
+        self.assertNotIn("theme-selector.sh", text)
+        self.assertEqual(text.count(niri_patch.BEGIN), 1)
+        self.assertEqual(text.count("{"), text.count("}"))
+
+    def test_migrates_legacy_marker(self):
+        tmp = Temp()
+        text = (
+            "// niri binds\n"
+            "binds {\n"
+            '    Mod+T { spawn "foot"; }\n'
+            '    Mod+Q { close-window; }\n'
+            "    // ==== low-spec rice ====\n"
+            '    Mod+Y { spawn "rice-paper"; }\n'
+            "}\n"
+        )
+        binds = tmp.file("binds.kdl", text)
+        frag = tmp.file("frag.kdl", FRAGMENT_SAMPLE)
+        self.assertEqual(niri_patch.main(["binds", binds, frag]), 0)
+        out = tmp.read(binds)
+        self.assertNotIn(niri_patch.LEGACY, out)
+        self.assertEqual(out.count("rice-paper"), 1)
+        self.assertEqual(out.count("{"), out.count("}"))
+
     def test_fails_without_closing_brace(self):
         tmp = Temp()
         binds = tmp.file("binds.kdl", 'binds {\n    Mod+T { spawn "foot"; }\n')
         frag = tmp.file("frag.kdl", FRAGMENT_SAMPLE)
         self.assertEqual(niri_patch.main(["binds", binds, frag]), 1)
+
 
 class IncludeTests(unittest.TestCase):
     def test_inserts_after_anchor(self):
@@ -114,6 +149,15 @@ class IncludeTests(unittest.TestCase):
         self.assertEqual(
             niri_patch.main(["include", other, "--name", "x.kdl", "--after", "layout.kdl"]), 1
         )
+
+    def test_ignores_anchor_inside_comment(self):
+        tmp = Temp()
+        cfg = tmp.file("config.kdl", "// include \"layout.kdl\"\ninclude \"binds.kdl\"\n")
+        self.assertEqual(
+            niri_patch.main(["include", cfg, "--name", "x.kdl", "--after", "layout.kdl"]), 1
+        )
+        out = tmp.read(cfg)
+        self.assertNotIn('include "x.kdl"', out)
 
 
 class MatugenTests(unittest.TestCase):
