@@ -196,9 +196,20 @@ sudo shorin-undochange
 | 现象 | 处理 |
 |---|---|
 | 9p 挂载失败 | `modprobe 9pnet_virtio` 后重试；或重启 VM |
-| 重启又进 ISO | 关机后 `VM_DISK=... bash vm/run.sh` 并手动 `-boot order=c`；或 GRUB 菜单选 Arch |
-| 登录后黑屏 | TTY 里 `niri-session`，看 `journalctl --user -b` |
+| 重启又进 ISO | 用 `VM_NO_ISO=1 bash vm/run.sh ...`（不挂 ISO，强制走硬盘） |
+| ly 登录报 authentication error | 用 HMP/手动输入；确认密码 `arch`。QMP `input-send-event` 对 ly 不稳，`sendkey` 可用 |
+| 登录后黑屏 / niri 停在 `niri_config: loaded config` | `systemctl status seatd`；`id arch` 应含 `seat` 组；`journalctl -u seatd -b`。新版 04n 会自动 enable seatd |
+| `niri-session` 报 dinit 相关错误 | 04n 已把 `/usr/share/wayland-sessions/niri.desktop` 改成 `Exec=niri --session` |
 | waybar 不出现 | `pkill waybar; waybar &`，看 stderr |
 | 中文变方块 | `fc-list :lang=zh`；缺字体则 `sudo pacman -S noto-fonts-cjk` |
 | 没有壁纸/不取色 | `matugen` 是否安装；`rice-wallpaper random` 手动跑 |
 | AUR 构建失败 | 看 `/tmp/rice-live.log` 与 `~/Documents/log-shorin-arch-setup.txt` |
+
+### VM 图形限制
+
+- 本机是 Apple Silicon，x86_64 走 TCG；niri 在 `virtio-gpu`/TCG 下可能一直停在
+  `niri_config: loaded config`，而 `seatd` 已打开 seat。这更像 QEMU/TCG 的图形后端问题，
+  不代表真实硬件。
+- QEMU 的 Cocoa 窗口在 niri 接手 DRM 后可能显示 `Display output is not active`；
+  用 `VM_VNC=127.0.0.1:0` 启动，然后 macOS「屏幕共享」连 `vnc://localhost:5900` 查看。
+- 最终桌面验证建议在真实 Arch 硬件（或带 GPU 加速的 UTM/virtio-gpu）上做。
