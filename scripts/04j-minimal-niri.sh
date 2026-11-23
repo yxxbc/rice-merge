@@ -33,7 +33,11 @@ if [[ -z "$TARGET_USER" || ! -d "$HOME_DIR" ]]; then
 fi
 
 info_kv "Target User" "$TARGET_USER"
-check_dm_conflict
+if [[ "${RICE_SKIP_DM:-0}" == "1" ]]; then
+    export SKIP_DM=false
+else
+    check_dm_conflict
+fi
 
 # =======================================================================
 # Temporary Sudo Privileges

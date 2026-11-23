@@ -70,7 +70,10 @@ success "Audio setup complete."
 # ------------------------------------------------------------------------------
 section "Step 3/8" "Input Method (Fcitx5)"
 pacman -Rdd --noconfirm fcitx5 || true
-exe as_user yay -S --noconfirm --needed fcitx5-shorin-patched-git
+if ! exe as_user yay -S --noconfirm --needed fcitx5-shorin-patched-git; then
+    warn "fcitx5-shorin-patched-git failed (AUR key/build); falling back to repo fcitx5"
+    exe pacman -S --noconfirm --needed fcitx5
+fi
 exe as_user yay -S --noconfirm --needed fcitx5-configtool fcitx5-gtk fcitx5-qt fcitx5-rime rime-ice-git
 
 success "Fcitx5 installed."
@@ -164,7 +167,11 @@ if [[ "$CURRENT_TZ" == *"Shanghai"* ]] || [ "$CN_MIRROR" == "1" ] || [ "$DEBUG" 
 fi
 
 if [ "$IS_CN_ENV" = true ]; then
-    select_flathub_mirror
+    if [[ "${UNATTENDED:-0}" == "1" ]]; then
+        log "Unattended: keeping the default Flathub source."
+    else
+        select_flathub_mirror
+    fi
 else
     log "Using Global Sources."
 fi
