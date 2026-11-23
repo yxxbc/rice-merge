@@ -19,7 +19,7 @@ sed -i 's/^#\s*en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 sed -i 's/^#\s*zh_CN.UTF-8 UTF-8/zh_CN.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen
 echo "LANG=${LOCALE}" > /etc/locale.conf
-echo "${KEYMAP}" > /etc/vconsole.conf
+echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
 echo "${SYS_HOSTNAME}" > /etc/hostname
 
 cat > /etc/hosts <<'HOSTS'
